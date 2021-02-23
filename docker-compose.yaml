@@ -1,0 +1,19 @@
+
+version: "3.8"
+
+services:
+
+  gitops-committer:
+    image: supercash/resources/gitops-committer
+    build: .
+    volumes:
+      - ${HOME}/.ssh:/root/.ssh
+      - ./workspace:/workspace
+    environment:
+      - GITOPS_TRIGGER_PIPELINE_URL=https://gitlab.com/supercash/services/reverse-proxy-resource/-/pipelines/256841576
+      - GITOPS_TRIGGER_REPO=git@github.com:marcellodesales/iot-observability.git
+      - GITOPS_TRIGGER_BRANCH=main
+      - GITOPS_TRIGGER_SHA=101020304
+      - GITOPS_EXECUTOR_SCRIPT=/workspace/supercash-gitops.sh
+      - GITOPS_EXECUTOR_COMMIT_MSG="Supercash GitOps"
+      - EXECUTOR_DOCKER_COMPOSE_SERVICE=orchestrator-service
