@@ -4,11 +4,13 @@ version: "3.8"
 services:
 
   gitops-committer:
-    image: supercash/resources/gitops-committer
+    image: marcellodesales/gitops-committer
     build: .
     volumes:
       - ${HOME}/.ssh:/root/.ssh
-      - ./workspace:/workspace
+      # The current dir of the repo that uses this is going to be the workspace
+      # This is the location where this will operate at to generate the metadata
+      - .:/workspace
     environment:
       - GITOPS_TRIGGER_PIPELINE_URL=https://gitlab.com/supercash/services/reverse-proxy-resource/-/pipelines/256841576
       - GITOPS_TRIGGER_REPO=git@github.com:marcellodesales/iot-observability.git
