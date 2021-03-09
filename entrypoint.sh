@@ -10,6 +10,8 @@ GITOPS_EXECUTOR_COMMIT_MSG=${GITOPS_EXECUTOR_COMMIT_MSG?"The commit message to u
 GITOPS_EXECUTOR_COMMIT_AUTHOR_NAME=${GITOPS_EXECUTOR_COMMIT_AUTHOR_NAME?"You must provide the commit author's name"}
 GITOPS_EXECUTOR_COMMIT_AUTHOR_EMAIL=${GITOPS_EXECUTOR_COMMIT_AUTHOR_EMAIL?"You must provide the commit author's email"}
 GITOPS_METADATA_VALUES_DIR=${GITOPS_METADATA_VALUES_DIR:""}
+GITOPS_EXECUTOR_REPO_PUSH_USERNAME=${GITOPS_EXECUTOR_REPO_PUSH_USERNAME?"You must provide the passwrod to write to the repo"}
+GITOPS_EXECUTOR_REPO_PUSH_TOKEN=${GITOPS_EXECUTOR_REPO_PUSH_TOKEN?"You must provide the value of the deployer's token"}
 
 echo ""
 cat banner.txt
@@ -48,16 +50,22 @@ echo ""
 # The directory containing the repo that will receive the gitops commit
 cd /gitops/workspace
 
-# Show the contents first
-git --no-pager show --quiet HEAD
-
-echo ""
 echo "* Current state of the trigger repo"
 echo ""
 ls -la
 echo ""
+
 git remote show origin
 
+echo ""
+echo "############### HEAD COMMIT ###############"
+echo ""
+
+# Show the contents first
+git --no-pager show --quiet HEAD
+
+echo ""
+echo "###############"
 echo ""
 echo "* Writing the gitops file .gitops-committer.yaml"
 
@@ -75,7 +83,8 @@ if [ ! -d "${GITOPS_METADATA_VALUES_DIR}" ]; then
   echo "* WARN: Not using any metadata dir. GITOPS_METADATA_VALUES_DIR needs to be set!"
 
 else
-  echo "* Appending the metadata values file provided '${GITOPS_METADATA_VALUES_DIR}'"
+  GITOPS_METADATA_VALUES_DIR=/workspace/${GITOPS_METADATA_VALUES_DIR}
+  echo "* Appending the metadata values file provided in resolved GITOPS_METADATA_VALUES_DIR='${GITOPS_METADATA_VALUES_DIR}'"
   echo "* Files are as follows:"
   ls -la ${GITOPS_METADATA_VALUES_DIR}
 
@@ -102,6 +111,11 @@ if [ -z "${STATUS}" ]; then
   echo 'INFO: No changes were made to the metadata...'
   exit 0
 fi
+
+echo ""
+echo "-----------"
+git --no-pager diff .gitops-committer.yaml
+echo "-----------"
 
 echo ""
 echo "###############################"
@@ -131,7 +145,9 @@ echo ""
 echo "* Pushing the GITOPS commit '${GITOPS_EXECUTOR_COMMIT_MSG} with branch ${GITOPS_TRIGGER_BRANCH}'"
 echo ""
 
-if ! git push origin ${GITOPS_TRIGGER_BRANCH}; then
+# Tokens are created per project https://gitlab.com/supercash/services/parking-lot-service/-/settings/ci_cd
+# They are provided
+if ! git push http://${GITOPS_EXECUTOR_REPO_PUSH_USERNMAE}:${GITOPS_EXECUTOR_REPO_PUSH_TOKEN} head:${GITOPS_TRIGGER_BRANCH}; then
   echo "ERROR: Can't push changes... Make sure you have the ssh keys mounted!"
   exit 4
 fi
