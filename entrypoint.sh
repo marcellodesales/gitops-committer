@@ -13,6 +13,7 @@ GITOPS_METADATA_VALUES_DIR=${GITOPS_METADATA_VALUES_DIR:""}
 GITOPS_EXECUTOR_REPO_PUSH_USERNAME=${GITOPS_EXECUTOR_REPO_PUSH_USERNAME?"You must provide the passwrod to write to the repo"}
 GITOPS_EXECUTOR_REPO_PUSH_TOKEN=${GITOPS_EXECUTOR_REPO_PUSH_TOKEN?"You must provide the value of the deployer's token"}
 GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES=${GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES?"You must provide the list of files to add in the commit"}
+GITOPS_EXECUTOR_REPO_PUSH_BRANCH=${GITOPS_EXECUTOR_REPO_PUSH_BRANCH?"You must provide the target branch to push changes to"}
 
 echo ""
 cat banner.txt
@@ -84,7 +85,8 @@ if [ ! -d "${GITOPS_METADATA_VALUES_DIR}" ]; then
   echo "* WARN: Not using any metadata dir. GITOPS_METADATA_VALUES_DIR needs to be set!"
 
 else
-  GITOPS_METADATA_VALUES_DIR=/workspace/${GITOPS_METADATA_VALUES_DIR}
+  # Update the dir to the workspace dir
+  GITOPS_METADATA_VALUES_DIR=/gitops/workspace/${GITOPS_METADATA_VALUES_DIR}
   echo "* Appending the metadata values file provided in resolved GITOPS_METADATA_VALUES_DIR='${GITOPS_METADATA_VALUES_DIR}'"
   echo "* Files are as follows:"
   ls -la ${GITOPS_METADATA_VALUES_DIR}
@@ -101,10 +103,10 @@ cat .gitops-committer.yaml
 echo "-----------"
 
 echo ""
-echo "Verifying the status of the repo..."
+echo "Verifying the status of the repo at ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}..."
 echo ""
-
-git status
+git checkout ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}
+git --no-pager status
 
 # https://unix.stackexchange.com/questions/155046/determine-if-git-working-directory-is-clean-from-a-script/155077#155077
 STATUS="$(git status --porcelain)"
@@ -118,9 +120,13 @@ echo ""
 echo "# Adding files '${GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES}'"
 export FILES=$(echo ${GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES} | tr ',' '\n')
 for FILE in ${FILES}; do
-  echo "+ Adding gitops file '${FILE}'"
+  echo "+ Adding gitops file 'git add ${FILE}'"
   git add ${FILE}
 done
+
+echo ""
+
+git --no-pager status
 
 echo ""
 echo "---- Git Ops Committer Diff -------"
@@ -143,9 +149,8 @@ git config user.email "${GITOPS_EXECUTOR_COMMIT_AUTHOR_EMAIL}"
 
 echo ""
 echo "* Writing the GITOPS commit '${GITOPS_EXECUTOR_COMMIT_MSG}'"
-echo ""
+echo
 
-git add -A
 git commit -m ":building_construction: GitOps ${GITOPS_TRIGGER_REPO}@${GITOPS_TRIGGER_SHA}" -m "${GITOPS_EXECUTOR_COMMIT_MSG}"
 
 # https://stackoverflow.com/questions/1828252/how-to-display-metadata-about-single-commit-in-git/1828259#1828259
@@ -157,10 +162,10 @@ echo ""
 
 # Tokens are created per project https://gitlab.com/supercash/services/parking-lot-service/-/settings/ci_cd
 # Getting the repo URL and using token instead https://stackoverflow.com/questions/46472250/cannot-push-from-gitlab-ci-yml/55344804#55344804
-export REPO_URL=$(git remote show origin  | grep Fetch | awk '{ print $3 }')
-export PUSH_URL="git push https://${GITOPS_EXECUTOR_REPO_PUSH_USERNAME}:${GITOPS_EXECUTOR_REPO_PUSH_TOKEN}@${REPO_URL#*@} head:${GITOPS_TRIGGER_BRANCH}"
-echo "Ready to push: git push ${PUSH_URL}"
-if ! git push ${PUSH_URL}; then
+# export REPO_URL=$(git remote show origin  | grep Fetch | awk '{ print $3 }')
+# export PUSH_URL="git push https://${GITOPS_EXECUTOR_REPO_PUSH_USERNAME}:${GITOPS_EXECUTOR_REPO_PUSH_TOKEN}@${REPO_URL#*@} head:${GITOPS_TRIGGER_BRANCH}"
+echo "Ready to push: git push origin ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}"
+if ! git push origin ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}; then
   echo "ERROR: Can't push changes... Make sure you have the ssh keys mounted!"
   exit 4
 fi
