@@ -2,7 +2,7 @@
 
 # Options used to clone the repo
 GITOPS_TRIGGER_PIPELINE_URL=${GITOPS_TRIGGER_PIPELINE_URL?"You must provide the trigger pipeline URL"}
-GITOPS_TRIGGER_REPO=${GITOPS_TRIGGER_REPO?"You must provide the gitops repo to clone"}
+GITOPS_TRIGGER_REPO=${GITOPS_TRIGGER_REPO?"You must provide the gitops repo that triggered the commit"}
 GITOPS_TRIGGER_BRANCH=${GITOPS_TRIGGER_BRANCH?"You must provide repo's branch to clone"}
 GITOPS_TRIGGER_SHA=${GITOPS_TRIGGER_SHA?"You must provide the SHA of the version triggering this commit"}
 # Options used to execute and verify the changes to commit
@@ -10,6 +10,8 @@ GITOPS_EXECUTOR_COMMIT_MSG=${GITOPS_EXECUTOR_COMMIT_MSG?"The commit message to u
 GITOPS_EXECUTOR_COMMIT_AUTHOR_NAME=${GITOPS_EXECUTOR_COMMIT_AUTHOR_NAME?"You must provide the commit author's name"}
 GITOPS_EXECUTOR_COMMIT_AUTHOR_EMAIL=${GITOPS_EXECUTOR_COMMIT_AUTHOR_EMAIL?"You must provide the commit author's email"}
 GITOPS_METADATA_VALUES_DIR=${GITOPS_METADATA_VALUES_DIR:""}
+
+GITOPS_EXECUTOR_REPO_PUSH_REPO=${GITOPS_EXECUTOR_REPO_PUSH_REPO?"You must provide the repo to push to"}
 GITOPS_EXECUTOR_REPO_PUSH_USERNAME=${GITOPS_EXECUTOR_REPO_PUSH_USERNAME?"You must provide the passwrod to write to the repo"}
 GITOPS_EXECUTOR_REPO_PUSH_TOKEN=${GITOPS_EXECUTOR_REPO_PUSH_TOKEN?"You must provide the value of the deployer's token"}
 GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES=${GITOPS_EXECUTOR_REPO_PUSH_INCLUDE_FILES?"You must provide the list of files to add in the commit"}
@@ -25,6 +27,7 @@ echo "###############################"
 echo ""
 echo "* Local commit for CI/CD"
 echo "* Triggered by ${GITOPS_TRIGGER_PIPELINE_URL}"
+echo "* Pushing to ${GITOPS_EXECUTOR_REPO_PUSH_REPO}"
 echo ""
 echo "#################"
 echo "#### Current env "
@@ -43,7 +46,7 @@ echo ""
 
 # Just clone the latest commit
 # https://stackoverflow.com/questions/1209999/using-git-to-get-just-the-latest-revision/1210012#1210012
-# if ! git clone --depth 1 --branch ${GITOPS_TRIGGER_BRANCH} ${GITOPS_TRIGGER_REPO} /gitops/workspace; then
+# if ! git clone --depth 1 --branch ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH} ${GITOPS_EXECUTOR_REPO_PUSH_REPO} /gitops/workspace; then
 #   echo "ERROR: Can't clone the provided repo."
 #   echo "ERROR: Make sure you have the right repo, branch, credentials at /root/.ssh"
 #   exit 1
@@ -163,7 +166,7 @@ echo ""
 # Tokens are created per project https://gitlab.com/supercash/services/parking-lot-service/-/settings/ci_cd
 # Getting the repo URL and using token instead https://stackoverflow.com/questions/46472250/cannot-push-from-gitlab-ci-yml/55344804#55344804
 # export REPO_URL=$(git remote show origin  | grep Fetch | awk '{ print $3 }')
-# export PUSH_URL="git push https://${GITOPS_EXECUTOR_REPO_PUSH_USERNAME}:${GITOPS_EXECUTOR_REPO_PUSH_TOKEN}@${REPO_URL#*@} head:${GITOPS_TRIGGER_BRANCH}"
+# export PUSH_URL="git push https://${GITOPS_EXECUTOR_REPO_PUSH_USERNAME}:${GITOPS_EXECUTOR_REPO_PUSH_TOKEN}@${REPO_URL#*@} head:${GITOPS_EXECUTOR_REPO_PUSH_REPO}"
 echo "Ready to push: git push origin ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}"
 if ! git push origin ${GITOPS_EXECUTOR_REPO_PUSH_BRANCH}; then
   echo "ERROR: Can't push changes... Make sure you have the ssh keys mounted!"
