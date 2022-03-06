@@ -19,3 +19,4 @@ services:
       - GITOPS_EXECUTOR_SCRIPT=/workspace/supercash-gitops.sh
       - GITOPS_EXECUTOR_COMMIT_MSG="Supercash GitOps"
       - EXECUTOR_DOCKER_COMPOSE_SERVICE=orchestrator-service
+      - GITOPS_EXECUTOR_REPO_PUSH_REPO=git@github.com:marcellodesales/iot-farm.git
